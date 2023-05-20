@@ -9,8 +9,8 @@ start
 	mov	r4, #0
 	mov	r5, #0
 	mov r6, #0
-    mov r14, #0
-    mov r13, #10
+    mov r11, #0
+    mov r10, #10
  
 num1
     bl	scan
@@ -24,8 +24,8 @@ num1
     CMP r0, #32		
     beq	num2	
     sub	r0, r0, #'0'	
-    mul	r14, r1, r13
-    add	r1, r14, r0		
+    mul	r11, r1, r10
+    add	r1, r11, r0		
     bl	num1
 
 num2
@@ -40,8 +40,8 @@ num2
 	CMP	r0, #32		
 	beq	num3	
 	sub	r0, r0, #'0'	
-	mul	r14, r2, r13
-	add	r2, r14, r0		
+	mul	r11, r2, r10
+	add	r2, r11, r0		
 	bl	num2
 
 num3
@@ -56,8 +56,8 @@ num3
 	CMP	r0, #32		
 	beq	num4	
 	sub	r0, r0, #'0'	
-	mul	r14, r3, r13
-	add	r3, r14, r0		
+	mul	r11, r3, r10
+	add	r3, r11, r0		
 	bl	num3
 
 num4
@@ -72,8 +72,8 @@ num4
 	CMP	r0, #32		
 	beq	num5	
 	sub	r0, r0, #'0'	
-	mul	r14, r4, r13
-	add	r4, r14, r0		
+	mul	r11, r4, r10
+	add	r4, r11, r0		
 	bl	num4
 
 num5
@@ -88,8 +88,8 @@ num5
 	CMP	r0, #32		
 	beq	array
 	sub	r0, r0, #'0'	
-	mul	r14, r5, r13
-	add	r5, r14, r0		
+	mul	r11, r5, r10
+	add	r5, r11, r0		
 	bl	num5
 	
 	
@@ -198,9 +198,10 @@ swap
 end
     mov r1, #0
     mov r2, #16
-	mov r11, #r10
-	mov r9, #20
-	mov r8, #0
+	mov r11, #0 ;biggest negative index
+	mov r9, #16 ;end
+	mov r8, #0 ;start
+	mov r7, #10 ;divider=10
 
 find_biggest_negative
 	ldr r0, [r6, r8]
@@ -214,7 +215,8 @@ find_biggest_negative
 
 gogo_negative
 	stmfd sp!, {lr}
-	mov r9, r8 ;store biggest negative index in r9
+	mov r11, r8 ;store biggest negative index in r11
+	add r11, r11, #1
 	mvn r0, r0
 	str r0, [r6, r8]
 	ldmfd sp!, {pc}
@@ -225,39 +227,41 @@ print_loop
 	ldr r0, [r6, r1]
 	ldr r10, =0x9000
 	mov r12, #0
-	mov r13, #0
-	mov r14, #0
+	mov r3, #0 
+	mov r4, #0 ;string index
 
 divide_10
 	cmp r0, #10
 	blt store_num
-	sub r0, r0, r11
-	add r13, r13, #1
+	sub r0, r0, r7
+	add r3, r3, #1
 	bl divide_10
 
 store_num
-	mov r13, r0
-	mov r0, r12
-	str r13, [r10, r14]
-	add r14, r14, #4
+	mov r12, r3 ;<- r12=r3(temp)
+	mov r3, r0 ; r3 <- r0(remainder)
+	mov r0, r12 ; r0 <- r12=r3(quotient = new dividend)
+	str r3, [r10, r4]
 	cmp r0, #0
 	beq print_number
+	add r4, r4, #4
 	bl divide_10
 
 print_number
-	cmp r1, r9 
-	ble print_negative
+	cmp r1, r11 ; less than r11 -> negative!
+	mov lr, pc
+	blt print_negative
 print_real
-	cmp r14, #0
+	cmp r4, #0 
 	blt next
-	ldr r0, [r6, r14]
+	ldr r0, [r10, r4]
 	add r0, r0, #'0'
 	bl print_char
-	sub r14, r14, #4
+	sub r4, r4, #4
 	bl print_real
 
 next
-	add r0, r0, #4
+	add r1, r1, #4
 	bl print_blank
 	bl print_loop
 
@@ -309,4 +313,3 @@ finish
 		SWI		0x123456			;; "software interrupt" = syscall
 			
 		END  
-		
